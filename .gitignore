@@ -1,0 +1,18 @@
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# PDF output
+*.pdf
+
+.ipynb_checkpoints/
+__pycache__/
