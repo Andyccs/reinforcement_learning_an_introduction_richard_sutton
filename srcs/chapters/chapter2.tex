@@ -1,3 +1,113 @@
 \section{Multi-armed Bandits}
 
-TODO
+The \textbf{value function} for the multi-armed bandit problem is:
+\begin{align*}
+    q_*(a) & = \mathbb{E}[R_t | A_t = a]                                    \\
+    \intertext{where}
+    q*     & : \text{The value of an arbitrary action } a                   \\
+    R_t    & : \text{The reward received on time step } t                   \\
+    A_t    & : \text{The action selected on time step } t                   \\
+    a      & : \text{An arbitrary action}                                 \
+\end{align*}
+
+\noindent Exploration vs Exploitation:
+\begin{itemize}
+    \item \textbf{Exploitation}: Select the action with the highest estimated value, aka. greedy action
+    \item \textbf{Exploration}: Select a nongreedy actions
+\end{itemize}
+
+\noindent $Q_t(a)$ is the estimated value of action $a$ at time $t$:
+\[ Q_t(a) \approx q_*(a) \]
+
+\noindent One way to estimate $Q_t(a)$ is to use the sample-average method:
+\begin{align*}
+    Q_t(a)                        & = \frac{\text{sum  of rewards when } a \text{ taken prior to }t }{\text{number of times } a \text{ taken prior to }t } \\
+                                  & = \frac{\sum_{i=1}^{t-1} R_i \cdot \mathbf{1}_{A_t=a}}{\sum_{i=1}^{t-1} \mathbf{1}_{A_t=a}}                            \\
+    \intertext{where}
+    \mathbf{1}_{\text{predicate}} & : \text{Indicator function that is 1 if predicate is true, 0 otherwise}                                                \\
+\end{align*}
+
+\noindent Gredy action selection:
+\[ A_t = \arg\max_a Q_t(a) \]
+
+\noindent $\epsilon$-Greedy action selection:
+\begin{equation*}
+    A_t = \begin{cases}
+        \arg\max_a Q_t(a)     & \text{with probability } 1 - \epsilon \\
+        \text{random actions} & \text{with probability } \epsilon
+    \end{cases}
+\end{equation*}
+
+The estimated value function of a specific action $a$ can be updated
+incrementally:
+\begin{align*}
+    Q_n                & = \frac{R_1 + R_2 + \cdots + R_{n-1}}{n-1}                                                   \\
+    Q_{n+1}            & = \frac{1}{n} \sum_{i=1}^{n} R_i                                                             \\
+                       & = \frac{1}{n} \left( R_n + \sum_{i=1}^{n-1} R_i \right)                                      \\
+                       & = \frac{1}{n} \left( R_n + (n-1)\frac{1}{n-1} \sum_{i=1}^{n-1} R_i \right)                   \\
+                       & = \frac{1}{n} (R_n + (n-1) Q_n)                                                              \\
+                       & = \frac{1}{n} (R_n + n Q_n - Q_n)                                                            \\
+                       & = Q_n + \frac{1}{n} [ R_n - Q_n ]                                                            \\
+    \text{NewEstimate} & \leftarrow \text{OldEstimate} + \text{StepSize} \cdot [ \text{Target} - \text{OldEstimate} ] \\
+\end{align*}
+
+\begin{algorithm}[H]
+    \caption{A simple bandit algorithm}
+    \begin{algorithmic}[1]
+        \State Initialize $Q(a) = 0$ amd $N(a) = 0$ for each $a$
+        \For{ever}
+        \State $A \leftarrow$ using $\epsilon$-greedy action selection
+        \State $R \leftarrow$ bandit($A$)
+        \State $N(A) \leftarrow N(A) + 1$
+        \State $Q(A) \leftarrow$ Q(A) + $\frac{1}{N(A)} [ R - Q(A) ]$
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+\noindent For nonstationary problems, we can use a constant step-size parameter $\alpha
+    \in (0, 1]$, giving more weight to recent rewards. This resulted in $Q_{n+1}$
+being a weighted average of past rewards and initial estimate $Q_1$
+\begin{align*}
+    Q_{n+1} & = Q_n + \alpha [ R_n - Q_n ]                                                 \\
+            & = \alpha R_n + (1 - \alpha) Q_n                                              \\
+            & = \alpha R_n + (1 - \alpha) [ \alpha R_{n-1} + (1 - \alpha) Q_{n-1} ]        \\
+            & = \alpha R_n + (1 - \alpha) \alpha R_{n-1} + (1 - \alpha)^2 Q_{n-1}          \\
+            & = \alpha R_n + (1 - \alpha) \alpha R_{n-1} + (1 - \alpha)^2 \alpha R_{n-2} + \\
+            & \cdots + (1 - \alpha)^{n-1} \alpha R_1 + (1 - \alpha)^n Q_1                  \\
+            & = (1 - \alpha)^n Q_1 + \sum_{i=1}^{n} \alpha (1 - \alpha)^{n-i} R_i
+\end{align*}
+
+\noindent \textbf{Optimistic Initial Values}: All methods discussed so far use the initial
+action-value estimates $Q_1(a)$. Initial action values can be set to a high
+value to encourage exploration in stationary problems. For nonstationary
+problems, optimistic initial values do not work as well since the exploration
+is temporary. If the task changes, creating a renewed need for exploration,
+this method cannot help.\\
+
+\noindent \textbf{Upper-Confidence-Bound (UCB) Action Selection}: UCB can be used to select action
+among non-greedy action while taking into account both how close their
+estimates are to being maximal and the uncertainties in those estimates.
+The square-root term is a measure of the uncertainty or variance in the
+estimate of $a$'s value.
+\begin{align*}
+    A_t    & = \argmax_a \left[ Q_t(a) + c \sqrt{\frac{\ln{t}}{N_t(a)}}\right]\
+    \intertext{where}
+    N_t(a) & : \text{The number of times that action a has been selected prior to time t} \\
+\end{align*}
+
+\noindent \textbf{Gradient Bandit Algorithm}: In this algorithm, we do not estimate the action
+values and use the estimated values to select actions. Instead, we learn a
+numerical preference for each action a, denoted by $H_t(a) \in \mathbb{R}$. The
+probability of taking action a on time step t is given b:
+\begin{align*}
+    \pi_t(a) & = \frac{e^{H_t(a)}}{\sum_{b=1}^{k} e^{H_t(b)}}                             \\
+    \intertext{where}
+    \pi_t(a) & : \text{The probability of selecting action } a \text{ at time } t         \\
+    H_t(a)   & : \text{The learned preference for selecting action } a \text{ at time } t \\
+    k        & : \text{The number of actions}                                             \\
+\end{align*}
+\noindent Using stocastic gradient ascent, the preferences are updated as follows:
+\begin{align*}
+    H_{t+1}(a) & = H_t(a) + \alpha \frac{\partial \mathbb{E}[R_t]}{\partial H_t(a)}  \\
+    H_{t+1}(a) & = H_t(a) + \alpha (R_t - \bar{R_t}) (\mathbf{1}_{a=A_t} - \pi_t(a)) \\
+\end{align*}
