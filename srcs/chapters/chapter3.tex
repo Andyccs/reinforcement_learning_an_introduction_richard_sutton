@@ -1,0 +1,140 @@
+\section{Finite Markov Decision Process}
+
+\subsection{The Agent-Environment Interface}
+The probability of a particular values of random variables $s' \in \mathcal{S}$
+and $r \in \mathcal{R}$ occuring at time $t$, given particular values of
+preceding state and action:
+\begin{align*}
+    p(s', r | s, a) & = \text{Pr} [ S_t = s', R_t = r | S_{t-1} = s, A_{t-1} = a ] \\
+    \intertext{where}
+    S_t             & : \text{State at time }t, \text{a random variable}           \\
+    s, s'           & : \text{A particular state}                                  \\
+    R_t             & : \text{Reward at time }t, \text{a random variable}          \\
+    r               & : \text{A particular reward}
+\end{align*}
+
+\noindent A few facts:
+\begin{align*}
+    p(s' | s, a) & = \sum_{r \in \mathcal{R}} p(s', r | s, a)                             \\
+    r(s, a)      & = \mathbb{E}[R_t | S_{t-1} = s, A_{t-1} = a]                           \\
+                 & = \sum_{r \in \mathcal{R}} r \ p(r | s, a)                             \\
+                 & = \sum_{r \in \mathcal{R}} r \sum_{s' \in \mathcal{S}} p(s', r | s, a) \\
+    r(s, a, s')  & = \mathbb{E}[R_t | S_{t-1} = s, A_{t-1} = a, S_t = s']                 \\
+                 & = \sum_{r \in \mathcal{R}} r \ p(r | s, a, s')                         \\
+                 & = \sum_{r \in \mathcal{R}} r \frac{p(s', r | s, a)}{p(s' | s, a)}
+\end{align*}
+
+\subsection{Goals and Rewards}
+TODO
+
+\subsection{Returns and Episodes}
+
+Returns is defined as sum of rewards:
+\begin{align*}
+    G_t & = R_{t+1} + R_{t+2} + R_{t+3} + \cdots + R_T                       \\
+    G_t & = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \cdots             \\
+        & = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \text{(with discounting)} \\
+        & = R_{t+1} + \gamma G_{t+1}
+\end{align*}
+
+\subsection{Unified Notation for Episodic and Conitnuing Tasks}
+TODO
+
+\subsection{Policies and Value Functions}
+
+The value function of a state $s$ under a policy $\pi$ is the expected return
+when starting in $s$ and following $\pi$ thereafter.
+\begin{align*}
+    v_\pi(s) & = \mathbb{E}_\pi [G_t | S_t = s]                                                                                           \\
+             & = \mathbb{E}_\pi \left[ \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \middle| S_t = s \right]\text{, for all } s \in \mathcal{S}
+\end{align*}
+
+\noindent The value of taking action $a$ in state $s$ under a policy $\pi$ as the
+expected return starting from $s$, taking action $a$, and thereafter following
+policy $\pi$:
+\begin{align*}
+    q_\pi(s,a) & = \mathbb{E}_\pi [G_t | S_t = s, A_t = a]                                                        \\
+               & = \mathbb{E}_\pi \left[ \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \middle| S_t = s, A_t = a \right]
+\end{align*}
+
+\noindent $v_\pi(s)$ in terms of $v_\pi(S_{t+1})$:
+\begin{align*}
+    v_{\pi}(s) & = \mathbb{E}_{\pi}[G_t | S_t = s]                                                  \\
+               & = \mathbb{E}_{\pi}[R_{t+1} + \gamma G_{t+1} | S_t = s]                             \\
+               & = \mathbb{E}_{\pi}[R_{t+1} + \gamma \mathbb{E}_{\pi}[G_{t+1} | S_{t+1}] | S_t = s] \\
+               & = \mathbb{E}_{\pi}[R_{t+1} + \gamma v_{\pi}(S_{t+1}) | S_t = s]
+\end{align*}
+
+\noindent $q_\pi(s,a)$ in terms of $q_\pi(S_{t+1}, A_{t+1})$:
+\begin{align*}
+    q_{\pi}(s, a) & = \mathbb{E}_{\pi}[G_t | S_t = s, A_t = a]                                                          \\
+                  & = \mathbb{E}_{\pi}[R_{t+1} + \gamma G_{t+1} | S_t = s, A_t = a]                                     \\
+                  & = \mathbb{E}_{\pi}[R_{t+1} + \gamma \mathbb{E}_\pi [G_{t+1} | S_{t+1}, A_{t+1}] | S_t = s, A_t = a] \\
+                  & = \mathbb{E}_{\pi}[R_{t+1} + \gamma q_{\pi}(S_{t+1}, A_{t+1}) | S_t = s, A_t = a]                   \\
+\end{align*}
+
+\noindent $v_\pi$ in terms of $q_\pi$:
+\begin{align*}
+    v_{\pi}(s) & = \sum_{a \in \mathcal{A}} \pi(a|s) q_\pi(s,a)
+\end{align*}
+
+\noindent $q_\pi$ in terms of $v_\pi$
+\begin{align}
+    q_\pi(s,a) & = \mathbb{E}_\pi [G_t | S_t = s, A_t = a] \nonumber                                        \\
+               & = \mathbb{E}_\pi [R_{t+1} + \gamma G_{t+1} | S_t = s, A_t = a] \nonumber                   \\
+               & = \mathbb{E}_\pi [R_{t+1} + \gamma v_\pi(S_{t+1}) | S_t = s, A_t = a] \label{eq:q_pi_v_pi} \\
+               & = \sum_{s', r} p(s', r | s, a) [r + \gamma v_\pi(s')] \nonumber
+\end{align}
+
+\noindent $v_\pi(s)$ in terms of $v_\pi(s')$:
+\begin{align}
+    v_{\pi}(s) & = \sum_{a \in \mathcal{A}} \pi(a|s) q_\pi(s,a) \nonumber                                                            \\
+    v_{\pi}(s) & = \sum_{a \in \mathcal{A}} \pi(a|s) \sum_{s', r} p(s', r | s, a) [r + \gamma v_\pi(s')] \label{eq:v_pi_four_args_p}
+\end{align}
+
+\noindent $q_\pi(s, a)$ in terms of $q_\pi(s', a')$
+\begin{align*}
+    q_\pi(s,a) & = \sum_{s', r} p(s', r | s, a) [r + \gamma v_\pi(s')]                                                                    \\
+               & = \sum_{s', r} p(s', r | s, a) \left[ r + \gamma \sum_{a' \in \mathcal{A}} \left[\pi(a'|s') q_\pi(s',a') \right] \right]
+\end{align*}
+
+\subsection{Optimal Policies and Optimal Value Functions}
+
+The optimal state-value function is defined as:
+\[
+    v_*(s) = \max_\pi v_\pi(s) \text{, for all }s \in \mathcal{S}
+\]
+
+\noindent The optimal action-value function is defined as:
+\begin{align}
+    q_*(s,a) & = \max_\pi q_\pi(s, a) \text{, for all }s \in \mathcal{S}, a \in \mathcal{A}(s) \nonumber                     \\
+             & = \mathbb{E} [R_{t+1} + \gamma v_*(S_{t+1}) | S_t = s, A_t = a] \text{, Using \eqref{eq:q_pi_v_pi}} \nonumber \\
+             & = \sum_{s', r} p(s', r | s, a) [r + \gamma v_*(s')] \label{eq:q_star_v_star}
+\end{align}
+
+\noindent \textbf{Bellman optimality equation} expresses the fact that the value of a state under
+an optimal policy must equal the expected return for the best action from that state.
+
+\noindent The bellman optimality equation for $v_*$
+\begin{align*}
+    v_*(s) & = \max_{a \in \mathcal{A}(s)} q_*(s, a)                                                                                           \\
+           & = \max_{a \in \mathcal{A}(s)} \sum_{s', r} p(s', r | s, a) [r + \gamma v_*(s')] \text{, Using \eqref{eq:q_star_v_star}} \nonumber \\
+\end{align*}
+
+\noindent The bellman optimality equation for $q_*$
+\begin{align*}
+    q_*(s, a) & = \mathbb{E} \left[ R_{t+1} + \gamma \max_{a'} q_*(S_{t+1}, a') | S_t = s, A_t = a \right] \\
+              & = \sum_{s',r} p(s', r | s, a) \left[ r + \gamma \max_{a'} q_*(s', a') \right]
+\end{align*}
+
+\noindent $v_\pi, v_*, q_\pi, q_*$ in terms of the three argument function $p$:
+\begin{align*}
+    v_{\pi}(s)  & = \sum_{a \in \mathcal{A}} \pi(a|s) \sum_{s', r} p(s', r | s, a) [r + \gamma v_\pi(s')] \text{, from \eqref{eq:v_pi_four_args_p}} \\
+                & = \sum_{a \in \mathcal{A}} \pi(a|s) \left[ \sum_{s', r} p(s', r | s, a) r + \sum_{s', r} p(s', r | s, a) \gamma v_\pi(s') \right] \\
+                & = \sum_{a \in \mathcal{A}} \pi(a|s) \left[ r(s,a) + \gamma \sum_{s'} p(s' | s, a) v_\pi(s') \right]                               \\
+    v_*(s)      & = \sum_{a \in \mathcal{A}} \pi_*(a|s) \left[ r(s,a) + \gamma \sum_{s'} p(s' | s, a) v_*(s') \right]                               \\
+    q_\pi(s, a) & = \sum_{s', r} p(s', r | s, a) [r + \gamma v_\pi(s')] \text{, from \eqref{eq:q_pi_v_pi}}                                          \\
+                & = \sum_{s', r} p(s', r | s, a) r + \sum_{s', r} p(s', r | s, a) \gamma v_\pi(s')                                                  \\
+                & = r(s,a) + \gamma \sum_{s'} p(s' | s, a) v_\pi(s')                                                                                \\
+    q_*(s, a)   & = r(s,a) + \gamma \sum_{s'} p(s' | s, a) v_*(s')                                                                                  \\
+\end{align*}
